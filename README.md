@@ -28,7 +28,22 @@ Make sure you have Python 3 installed. The following packages are required:
 You can install these dependencies using `pip`:
 
 ```bash
-pip install numpy scipy imutils playsound argparse dlib opencv-python
+# Install virtualenv if you don't have it
+pip install virtualenv
+
+# Create and activate virtual environment
+virtualenv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+
+# Install necessary packages
+pip install opencv-python
+pip install opencv-contrib-python
+pip install dlib
+pip install imutils
+pip install numpy
+pip install scipy
+pip install playsound
+
 ```
 
 
