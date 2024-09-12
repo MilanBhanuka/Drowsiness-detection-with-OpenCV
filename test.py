@@ -3,7 +3,7 @@ from scipy.spatial import distance as dist # to compute the euclidean distance b
 from imutils.video import VideoStream # handles webcam input for video streams
 from imutils import face_utils # contains utility functions for facial landmarks
 from threading import Thread    # enables multi-threading to play the alarm sound 
-import numpy as np
+import numpy as np # for numerical processing
 import playsound
 import argparse
 import imutils
