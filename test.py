@@ -1,19 +1,16 @@
 #import the necessary packages
-from scipy.spatial import distance as dist
-from imutils.video import VideoStream
-from imutils import face_utils
-from threading import Thread
+from scipy.spatial import distance as dist # to compute the euclidean distance between facial landmarks
+from imutils.video import VideoStream # handles webcam input for video streams
+from imutils import face_utils # contains utility functions for facial landmarks
+from threading import Thread    # enables multi-threading to play the alarm sound 
 import numpy as np
 import playsound
 import argparse
 import imutils
 import time
-import dlib
-import cv2
-
-
+import dlib  # to detect and localize facial landmarks 
+import cv2  # OpenCV for image processing
 import os
-
 
 
 def sound_alarm(path):
@@ -39,36 +36,22 @@ def eye_aspect_ratio(eye):
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--shape-predictor", required=True,help="path to facial landmark predictor")
-
 ap.add_argument("-a", "--alarm", type=str, default="",help="path alarm .mp3 file")
-
 ap.add_argument("-w", "--webcam", type=int, default=0,help="index of webcam on system")   
 args = vars(ap.parse_args())
 
-# Check if the shape predictor file exists
-if not os.path.exists(args["shape_predictor"]):
-    print(f"[ERROR] Shape predictor file not found at: {args['shape_predictor']}")
-    exit(1)
-
-# Check if the alarm file exists, if provided
-if args["alarm"] != "" and not os.path.exists(args["alarm"]):
-    print(f"[WARNING] Alarm file not found at: {args['alarm']}. Alarm will not sound.")
-    args["alarm"] = ""
-
-
-# define two constants, one for the eye aspect ratio to indicate blink and then a second constant for the number of consecutive frames the eye must be below the threshold
-EYE_AR_THRESH = 0.3
-EYE_AR_CONSEC_FRAMES = 48
+EYE_AR_THRESH = 0.3 # The threshold value for EAR below which eyes are considered closed
+EYE_AR_CONSEC_FRAMES = 48 # 48 frames = 1 second -> The number of consecutive frames the EAR must be below the threshold to trigger the drowsiness alarm
 
 # initialize the frame counters and the total number of blinks
-COUNTER = 0
+COUNTER = 0 # Counts the number of consecutive frames where EAR is below the threshold.
 ALARM_ON = False
 
 
 # initialize dlib's face detector (HOG-based) and then create the facial landmark predictor
 print("[INFO] loading facial landmark predictor...")
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(args["shape_predictor"])
+detector = dlib.get_frontal_face_detector() # Uses dlib's HOG-based face detector to detect faces in the frame.
+predictor = dlib.shape_predictor(args["shape_predictor"]) # Uses dlib's HOG-based face detector to detect faces in the frame.
 
 
 # grab the indexes of the facial landmarks for the left and right eye, respectively
@@ -83,23 +66,17 @@ time.sleep(1.0)
 
 # loop over frames from the video stream
 while True:
-    # grab the frame from the threaded video file stream, resize it, and convert it to grayscale
-    # channels)
-    frame = vs.read()
-    frame = imutils.resize(frame, width=450)
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # detect faces in the grayscale frame
-    rects = detector(gray, 0)
+    frame = vs.read() # capture the frame from the video stream
+    frame = imutils.resize(frame, width=800) # resize the frame 
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # convert the frame to grayscale
+    rects = detector(gray, 0) # detect faces in the grayscale frame
 
     # loop over the face detections
     for rect in rects:
-        # determine the facial landmarks for the face region, then convert the facial landmark (x, y)-coordinates to a NumPy array
-        shape = predictor(gray, rect)
-        shape = face_utils.shape_to_np(shape)
-
-        # Check if landmarks are being detected
-        print(f"Facial landmarks detected: {shape}")
+        shape = predictor(gray, rect) # Detects the facial landmarks in the face region
+        shape = face_utils.shape_to_np(shape) # Converts the facial landmarks to a NumPy array
+        
+        print(f"Facial landmarks detected: {shape}") # print the facial landmarks detected
 
         # extract the left and right eye coordinates, then use the coordinates to compute the eye aspect ratio for both eyes
         leftEye = shape[lStart:lEnd]
@@ -110,11 +87,10 @@ while True:
         # average the eye aspect ratio together for both eyes
         ear = (leftEAR + rightEAR) / 2.0
 
-
         # compute the convex hull for the left and right eye, then visualize each of the eyes
-        leftEyeHull = cv2.convexHull(leftEye)
+        leftEyeHull = cv2.convexHull(leftEye) 
         rightEyeHull = cv2.convexHull(rightEye)
-        cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1)
+        cv2.drawContours(frame, [leftEyeHull], -1, (0, 255, 0), 1) 
         cv2.drawContours(frame, [rightEyeHull], -1, (0, 255, 0), 1)
 
         # check to see if the eye aspect ratio is below the blink threshold, and if so, increment the blink frame counter
@@ -143,7 +119,7 @@ while True:
 
 
         # draw the computed eye aspect ratio on the frame to help with debugging and setting the correct eye aspect ratio threshold
-        cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(frame, "EAR: {:.2f}".format(ear), (650, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 
     # show the frame
